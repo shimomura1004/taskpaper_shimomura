@@ -1,0 +1,43 @@
+* Install
+
+After download this file, just put the code below into your .emacs
+
+  (require 'taskpaper)
+
+* Usage
+
+(1) Create a Taskpaper file
+
+  M-x find-file RET 2008-02-18.taskpaper
+
+(2) Create a new project
+
+  `C-c C-p' or just write as follows:
+
+  Project 1:
+
+(2) List tasks as follows:
+
+  `C-c C-t' or just write as follows:
+
+  Project 1:
+
+  + task 1
+  + task 2
+
+  Project 2:
+
+  + task 3
+  + task 4
+
+(3) Mark task as done
+
+  `C-c C-d' on the task you have done.
+
+(4) Find tag
+
+  `C-c C-f'
+
+(5) Find tasks which are due the specified date
+
+  `C-c <'

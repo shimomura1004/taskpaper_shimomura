@@ -20,51 +20,7 @@
 ;; the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 ;; Boston, MA 02110-1301, USA.
 
-;;; Commentary:
-
-;; * Install
-;;
-;; After download this file, just put the code below into your .emacs
-;;
-;;   (require 'taskpaper)
-;;
-;; * Usage
-;;
-;; (1) Create a Taskpaper file
-;;
-;;   M-x find-file RET 2008-02-18.taskpaper
-;;
-;; (2) Create a new project
-;;
-;;   `C-c C-p' or just write as follows:
-;;
-;;   Project 1:
-;;
-;; (2) List tasks as follows:
-;;
-;;   `C-c C-t' or just write as follows:
-;;
-;;   Project 1:
-;;
-;;   + task 1
-;;   + task 2
-;;
-;;   Project 2:
-;;
-;;   + task 3
-;;   + task 4
-;;
-;; (3) Mark task as done
-;;
-;;   `C-c C-d' on the task you have done.
-;;
-
-;;; TODO:
-
-;;   + Suppot tags
-;;   + Norrowing by project and tag with simple interaction
-
-;; use outline-mode
+;; アウトラインモードを使って todo を折りたたみ
 (add-hook 'taskpaper-mode-hook 'my-taskpaper-hook)
 (defun taskpaper-outline-level ()
   (save-excursion
