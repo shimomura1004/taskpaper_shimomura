@@ -51,7 +51,7 @@
 ;; 指定された日付よりも締め切りが前のものだけを開く
 (defun taskpaper-open-before-date (date-string)
   (interactive "sBEFORE: ")
-  (taskpaper-find-tag-with-due (parse-date date-string)))
+  (taskpaper-find-tag-with-due (parse-natural-date date-string)))
 (defun taskpaper-find-tag-with-due (date)
   (taskpaper-open-line
    "@due(\\(.*\\))"
@@ -65,6 +65,11 @@
    (lambda (year mon day) (+ (* year 10000) (* mon 100) day))
    (mapcar (lambda (str) (string-to-number str)) (split-string date-string "-"))))
 
+;; today などの日常語で指定された日付を変換
+(defun parse-natural-date (date-string)
+  (parse-date (cond
+               ((string-equal "today" date-string) (format-time-string "%Y-%m-%d"))
+               (t date-string))))
 
 ;;; Code:
 
