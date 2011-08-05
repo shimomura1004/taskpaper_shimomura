@@ -54,7 +54,7 @@
   (taskpaper-find-tag-with-due (parse-natural-date date-string)))
 (defun taskpaper-find-tag-with-due (date)
   (taskpaper-open-line
-   "@due(\\(.*\\))"
+   "@due(\\(.*?\\))"
    (lambda () (let ((date-of-due (parse-date (match-string 1))))
                 (message (match-string 1))
                 (< date-of-due date)))))
