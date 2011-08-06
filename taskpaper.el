@@ -165,11 +165,13 @@
   (interactive "sProject Name: ")
   (insert (concat name ":\n\n")))
 
-(defun taskpaper-create-new-task (task)
+(defun taskpaper-create-new-task ()
   "Creates new task"
-  (interactive "sNew Task: ")
-  (insert (concat "- " task))
-  (newline-and-indent))
+  (interactive)
+  (let ((task (read-from-minibuffer "New Task: "))
+        (due (read-from-minibuffer "Due: ")))
+    (insert (concat "- " task " @due(" due ")"))
+    (newline-and-indent)))
 
 (defun taskpaper-toggle-task (beg end)
   "Marks task as done"
