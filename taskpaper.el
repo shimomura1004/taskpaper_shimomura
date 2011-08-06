@@ -170,7 +170,8 @@
   (interactive)
   (let ((task (read-from-minibuffer "New Task: "))
         (due (read-from-minibuffer "Due: ")))
-    (insert (concat "- " task " @due(" due ")"))
+    (insert (concat "- " task))
+    (when (not (string-equal "" due)) (insert (concat " @due(" due ")")))
     (newline-and-indent)))
 
 (defun taskpaper-toggle-task (beg end)
