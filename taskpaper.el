@@ -47,9 +47,22 @@
    (lambda (year mon day) (+ (* year 10000) (* mon 100) day))
    (mapcar (lambda (str) (string-to-number str)) (split-string date-string "-"))))
 
+;; 簡単な日付の計算を行う
+(defun calc-date (offset &optional date)
+  (apply
+   (lambda (seconds minutes hour day month year dow dst zone)
+     (encode-time seconds minutes hour (+ day offset) month year dow dst zone))
+   (if date (decode-time date) (decode-time (current-time)))))
+
 ;; today などの日常語で指定された日付を変換
 (defun parse-natural-date (date-string)
-  (cond ((string-equal "today" date-string) (format-time-string "%Y-%m-%d"))
+  (cond ((string-equal "today" date-string)
+         (format-time-string "%Y-%m-%d" (calc-date 0)))
+        ((string-equal "tomorrow" date-string)
+         (format-time-string "%Y-%m-%d" (calc-date 1)))
+        ((string-match "+\\([0-9]*\\)" date-string)
+         (format-time-string "%Y-%m-%d"
+                             (calc-date (string-to-number (match-string 1 date-string)))))
         (t date-string)))
 
 ;;; Code:
