@@ -84,6 +84,10 @@
 (define-key taskpaper-mode-map "\C-cdd" 'taskpaper-done-line-del-region)
 (define-key taskpaper-mode-map "\C-c\C-f" 'taskpaper-open-at-tag)
 (define-key taskpaper-mode-map "\C-c<" 'taskpaper-open-before-date)
+(define-key taskpaper-mode-map "\C-c=" 'taskpaper-open-exact-date)
+(define-key taskpaper-mode-map "\C-c\C-w" 'taskpaper-check-workload)
+(define-key taskpaper-mode-map "\C-c\C-c" 'taskpaper-commit-todo)
+(define-key taskpaper-mode-map "\C-c\C-s" 'taskpaper-push-todo)
 
 ;; Face
 (defface taskpaper-project-face
@@ -121,22 +125,83 @@
      (:foreground "orange")))
   "Face definition for comment mark")
 
+(defface taskpaper-important-face
+  '((((class color) (background light))
+     (:background "pink"))
+    (((class color) (background dark))
+     (:background "pink")))
+  "Face definition for important mark")
+
+(defface taskpaper-wait-face
+  '((((class color) (background light))
+     (:background "lightblue"))
+    (((class color) (background dark))
+     (:background "lightblue")))
+  "Face definition for wait mark")
+
+(defface taskpaper-block-face
+  '((((class color) (background light))
+     (:background "lightgreen"))
+    (((class color) (background dark))
+     (:background "lightgreen")))
+  "Face definition for block mark")
+
+(defface taskpaper-inprogress-face
+  '((((class color) (background light))
+     (:background "lightgreen"))
+    (((class color) (background dark))
+     (:background "lightgreen")))
+  "Face definition for inprogress mark")
+
+
 (defvar taskpaper-project-face 'taskpaper-project-face)
 (defvar taskpaper-task-marked-as-done-face 'taskpaper-task-marked-as-done-face)
 (defvar taskpaper-task-mark-face 'taskpaper-task-mark-face)
 (defvar taskpaper-at-tag-face 'taskpaper-at-tag-face)
 (defvar taskpaper-comment-face 'taskpaper-comment-face)
+(defvar taskpaper-important-face 'taskpaper-important-face)
+(defvar taskpaper-wait-face 'taskpaper-wait-face)
+(defvar taskpaper-block-face 'taskpaper-block-face)
+(defvar taskpaper-inprogress-face 'taskpaper-inprogress-face)
 (defvar taskpaper-font-lock-keywords
-  '(("^.+:[ \t]*$" 0 taskpaper-project-face)
+  '(("^[ \t]*\\(.+:\\)[ \t]*$"
+     (1 taskpaper-project-face t))
     ("^ ?*-[ \t]*\\(.*\\)\\( @done([0-9]+-[0-9]+-[0-9]+)\\)$"
      (1 taskpaper-task-marked-as-done-face)
      (2 taskpaper-at-tag-face t))
     ("^ ?*-[ \t]*\\(.*\\)\\( @done\\)$"
      (1 taskpaper-task-marked-as-done-face)
      (2 taskpaper-at-tag-face t))
+
+    ("^ ?*-[ \t]*\\(.*\\)\\( @canceled([0-9]+-[0-9]+-[0-9]+)\\)$"
+     (1 taskpaper-task-marked-as-done-face)
+     (2 taskpaper-at-tag-face t))
+    ("^ ?*-[ \t]*\\(.*\\)\\( @canceled\\)$"
+     (1 taskpaper-task-marked-as-done-face)
+     (2 taskpaper-at-tag-face t))
+
     ("^ ?*-" (0 taskpaper-task-mark-face t))
     ("\\( @\\w+\\)" (1 taskpaper-at-tag-face t))
     ("^ ?*[^- \n].*[^:\n]$\\|^ ?*[^- \n]$" (0 taskpaper-comment-face t))
+
+    ("^ ?*-[ \t]*\\(.*\\)\\( @wait\\).*$"
+     (1 taskpaper-wait-face t)
+     (2 taskpaper-wait-face t))
+    ("^ ?*-[ \t]*\\(.*\\)\\( @wait(.+?)\\).*$"
+     (1 taskpaper-wait-face t)
+     (2 taskpaper-wait-face t))
+    ("^ ?*-[ \t]*\\(.*\\)\\( @block\\).*$"
+     (1 taskpaper-block-face t)
+     (2 taskpaper-block-face t))
+    ("^ ?*-[ \t]*\\(.*\\)\\( @block(.+?)\\).*$"
+     (1 taskpaper-block-face t)
+     (2 taskpaper-block-face t))
+    ("^ ?*-[ \t]*\\(.*\\)\\( @important\\).*$"
+     (1 taskpaper-important-face t)
+     (2 taskpaper-important-face t))
+    ("^ ?*-[ \t]*\\(.*\\)\\( @inprogress\\).*$"
+     (1 taskpaper-inprogress-face t)
+     (2 taskpaper-inprogress-face t))
     ))
 
 ;; Taskpaper major mode
@@ -166,8 +231,7 @@
         (due (read-from-minibuffer "Due: ")))
     (insert (concat "- " task))
     (when (not (string-equal "" due))
-      (insert (concat " @due(" (parse-natural-date due) ")")))
-    (newline-and-indent)))
+      (insert (concat " @due(" (parse-natural-date due) ")")))))
 
 (defun taskpaper-toggle-task (beg end)
   "Marks task as done"
@@ -182,13 +246,19 @@
       (goto-char beg)
       (beginning-of-line)
       (while (< (point) end-mark)
-        (when (looking-at "-")
+        (when (looking-at "[ \t]*-")
           (if (or (looking-at ".*\\( @done\\)$")
                   (looking-at ".*\\( @done([0-9]+-[0-9]+-[0-9]+)\\)$"))
-              (delete-region (match-beginning 1) (match-end 1))
-            (progn (end-of-line)
-                   (insert
-                    (concat " @done(" (format-time-string "%Y-%m-%d") ")")))))
+              (progn
+                (delete-region (match-beginning 1) (match-end 1))
+                (end-of-line)
+                (insert " @inprogress"))
+            (progn
+              (beginning-of-line)
+              (when (looking-at ".*\\( @inprogress\\)$")
+                (delete-region (match-beginning 1) (match-end 1)))
+              (end-of-line)
+              (insert (concat " @done(" (format-time-string "%Y-%m-%d") ")")))))
         (forward-line)
         ))))
 
@@ -254,9 +324,9 @@
   (taskpaper-open-line (concat "@\\w*" keyword "\\w*") (lambda () 1)))
 
 ;; 指定された日付よりも締め切りが前のものだけを開く
-(defun taskpaper-open-before-date (date-string)
-  (interactive "sBEFORE: ")
-  (taskpaper-find-tag-with-due (parse-date (parse-natural-date date-string))))
+;(defun taskpaper-open-before-date (date-string)
+;  (interactive "sBEFORE: ")
+;  (taskpaper-find-tag-with-due (parse-date (parse-natural-date date-string))))
 (defun taskpaper-find-tag-with-due (date)
   (taskpaper-open-line
    "@due(\\(.*?\\))"
@@ -264,5 +334,54 @@
                 (message (match-string 1))
                 (< date-of-due date)))))
 
+(defun taskpaper-open-before-date (date-string)
+  (interactive "sBEFORE: ")
+  (let ((date (parse-date (parse-natural-date date-string))))
+    (taskpaper-process-for-each-task
+     "due"
+     (lambda (param)
+       (when (<= date (parse-date (parse-natural-date param)))
+	 (show-branches) (show-entry))))))
+
+(defun taskpaper-open-exact-date (date-string)
+  (interactive "sDATE: ")
+  (let ((date (parse-date (parse-natural-date date-string))))
+    (taskpaper-process-for-each-task
+     "due"
+     (lambda (param)
+       (when (= date (parse-date (parse-natural-date param)))
+	 (show-branches) (show-entry))))))
+
+;; 汎用タグ関数
+(defun taskpaper-process-for-each-task (tag proc)
+  (save-excursion
+    (hide-body)
+    (beginning-of-buffer)
+    (while (re-search-forward (concat "@" tag "(\\(.*?\\))") nil t)
+      (funcall proc (match-string 1)))))
+
+(defun taskpaper-check-workload ()
+  (interactive "")
+  (shell-command "wl"))
+
+(defun taskpaper-commit-todo ()
+  (interactive "")
+  (shell-command "todo commit"))
+
+(defun taskpaper-push-todo ()
+  (interactive "")
+  (shell-command "todo push"))
+
+;; imenu 対応
+(require 'cl)
+(defun taskpaper-imenu-create-index ()
+  (let (index)
+    (goto-char (point-min))
+    (while (re-search-forward "^-\s*\\([^@\n]+\\)" (point-max) t)
+      (push (cons (match-string 1) (match-beginning 1)) index))
+    (nreverse index)))
+
+(add-hook 'taskpaper-mode-hook
+	  (lambda () (setq imenu-create-index-function 'taskpaper-imenu-create-index)))
 (provide 'taskpaper)
 ;;; taskpaper.el ends here
